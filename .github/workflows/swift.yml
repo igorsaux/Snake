@@ -1,0 +1,38 @@
+# This workflow will build a Swift project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
+
+name: Swift
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: SwiftyLab/setup-swift@latest
+    - name: Get swift version
+      run: swift --version
+    - uses: actions/checkout@v4
+    - name: Download SDL3
+      run: |
+        Invoke-WebRequest -Uri https://github.com/libsdl-org/SDL/releases/download/release-3.2.16/SDL3-devel-3.2.16-VC.zip -OutFile SDL3-devel.zip
+        Expand-Archive SDL3-devel.zip -DestinationPath .
+        Invoke-WebRequest -Uri https://github.com/libsdl-org/SDL/releases/download/release-3.2.16/SDL3-3.2.16-win32-x86.zip -OutFile SDL3.zip
+        Expand-Archive .\SDL3.zip -DestinationPath .
+    - name: Build
+      run: swift build -c release -Xswiftc "-I.\\SDL3-3.2.16\\include" -Xswiftc "-L.\\SDL3-3.2.16\\lib\\x64" --static-swift-stdlib
+    - name: Move Artifacts
+      run: |
+        cp ./.build/release/Snake.exe ./
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Snake-x86_64-Windows
+        path: |
+          ./Snake.exe
+          ./SDL3.dll
